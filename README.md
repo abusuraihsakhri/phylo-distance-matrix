@@ -1,7 +1,7 @@
 # Phylo Distance Matrix
 
 > **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Reference Guidelines & Standards:** `Standard Clinical Formulations & ISO/IEC Quality Frameworks`
+> **Reference Guidelines & Standards:** `CAP / CLSI / ISO Standards`
 
 <div align="center">
 
@@ -18,69 +18,81 @@
 
 ## 📖 What It Does
 
-Phylogenetic Distance Matrix Builder
-Pairwise p-distance, JC69 and K2P from aligned FASTA with NJ-ready matrix.
-Stdlib parser / mapper with batch CSV and single lookup.
+Phylogenetic Distance Matrix Builder with enterprise security features:
+
+- **Domain Lookup Engine**: Token overlap + substring scoring for biomedical term matching (p-distance, JC69, K2P, Neighbor-Joining, FASTA, Newick)
+- **Batch CSV Processing**: Process CSV files with automatic query column detection
+- **Multi-Agent Supervisor**: Orchestrates specialized workers (QC, Safety, Protocol Conformance) for task evaluation
+- **Zero-PHI Outbound Guard**: Regex-based detection and redaction of protected health information (SSN, MRN, phone, email, DOB)
+- **HMAC-SHA256 Audit Trail**: Cryptographically chained, tamper-evident logging
+- **FastAPI REST API**: OpenAPI 3.1 endpoints with Prometheus metrics
 
 ---
 
-## ⚙️ Key Capabilities & Algorithmic Modules
+## ⚙️ Key Modules
 
-### 🔬 Analytical Functions
+### Core Module (`phylo_dist.py`)
+- **`lookup(query)`** — Domain-specific term matching with scoring. Returns top hits.
+- **`process_csv(input, output)`** — Batch CSV processing with validation and path traversal protection.
+- **`build_parser()`** — CLI argument parser construction.
+- **`main(argv)`** — CLI entry point.
 
-- **`lookup()`**: Single lookup: token overlap + substring scoring (no deps). Returns top hits.
-- **`process_csv()`** — calculates and validates process_csv parameters.
-- **`build_parser()`** — calculates and validates build_parser parameters.
-- **`main()`** — calculates and validates main parameters.
-
----
-
-## 📐 Mathematical Formulation & Logic
-
-```text
-  score = 0
-```
+### Enterprise Agents (`agents/`)
+- **`base.py`** — PHI guard, HMAC-SHA256 audit trail, security exceptions
+- **`supervisor.py`** — Multi-agent orchestration and consensus building
+- **`workers.py`** — Specialized evaluation workers (QC, Safety, Protocol)
+- **`api.py`** — FastAPI REST endpoints
+- **`metrics.py`** — Prometheus metrics collector
+- **`models.py`** — Pydantic data models
 
 ---
 
 ## 💻 CLI Quickstart & Usage
 
-### 1. Guided Interactive Mode
+### Installation
 ```bash
-python cli.py
+pip install fastapi uvicorn pydantic pytest
 ```
 
-### 2. Direct Parameterized Evaluation
+### Run the CLI
 ```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
+# Single lookup
+python phylo_dist.py single jc69
+
+# Batch CSV processing
+python phylo_dist.py batch --input sample.csv --output results.csv
+
+# Enterprise supervisor audit
+python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
+
+# Batch processing via supervisor
+python cli.py batch -i sample.csv -o results.csv
+
+# Verify audit trail integrity
+python cli.py verify-audit
+
+# Launch REST API server
+python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
-
-### Input Data Schema
-
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `query` | Parameter / observation metric | Required |
-| `name` | Parameter / observation metric | Required |
+### API Endpoints
+| Endpoint | Method | Description |
+|:---------|:-------|:------------|
+| `/health` | GET | Health check |
+| `/metrics` | GET | Prometheus metrics |
+| `/api/audit` | POST | Submit task for evaluation |
+| `/api/chat` | POST | Supervisory chat query |
+| `/api/audit/logs` | GET | Retrieve audit trail |
 
 ---
 
-## 🛡️ Security & Enterprise Architecture
+## 🛡️ Security Features
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+* **Zero-PHI Outbound Guard:** Regex-based detection of SSNs, MRNs, phone numbers, emails, DOBs, and patient names. Raises `SecurityException` on detection.
+* **PHI Redaction:** `PHIGuard.redact_phi()` replaces sensitive patterns with `[REDACTED_IDENTIFIER]`.
+* **HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs. Set `AUDIT_SECRET_KEY` environment variable in production.
+* **Path Traversal Protection:** File operations restricted to working directory and system temp directory.
+* **Input Validation:** CSV file size limits, empty file detection, header validation.
 
 ---
 
@@ -92,10 +104,16 @@ Run the automated test suite:
 pytest -v
 ```
 
+Run with coverage:
+
+```bash
+pytest -v --tb=short
+```
+
 Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 100
 ```
 
 ---
@@ -104,5 +122,38 @@ python simulator.py --tasks 1000 --concurrency 8
 
 ```bash
 docker build -t phylo-distance-matrix .
-docker run -p 8000:8000 phylo-distance-matrix
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key phylo-distance-matrix
+```
+
+Or using Docker Compose:
+
+```bash
+AUDIT_SECRET_KEY=your-secret-key docker-compose up
+```
+
+---
+
+## 📁 Project Structure
+
+```
+phylo-distance-matrix/
+├── phylo_dist.py          # Core lookup and CSV processing
+├── cli.py                 # CLI interface
+├── simulator.py           # Stress testing simulator
+├── enrichment.py          # Feature engines
+├── agents/                # Enterprise agent framework
+│   ├── base.py           # Security, PHI guard, audit trail
+│   ├── supervisor.py     # Multi-agent orchestrator
+│   ├── workers.py        # Specialized evaluation workers
+│   ├── api.py            # FastAPI endpoints
+│   ├── models.py         # Pydantic models
+│   ├── metrics.py        # Prometheus metrics
+│   ├── llm_factory.py    # LLM provider factory
+│   ├── learning.py       # Bayesian calibration
+│   └── streamer.py       # WebSocket telemetry
+├── tests/                 # Test suite
+├── web/                   # Operations console (HTML)
+├── Dockerfile             # Container definition
+├── docker-compose.yml     # Compose configuration
+└── .github/workflows/     # CI/CD pipeline
 ```
