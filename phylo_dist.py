@@ -11,6 +11,7 @@ import os
 import pathlib
 import re
 import sys
+from distance_matrix import parse_fasta, calculate_matrix, render_matrix
 
 # Maximum file size for CSV processing (10 MB)
 MAX_CSV_FILE_SIZE = 10 * 1024 * 1024
@@ -27,7 +28,7 @@ def _safe_resolve_path(path_str: str) -> pathlib.Path:
     tmp_root = pathlib.Path(tempfile.gettempdir()).resolve()
     allowed_roots.append(tmp_root)
 
-    if not any(str(p).startswith(str(root)) for root in allowed_roots):
+    if not any(p == root or root in p.parents for root in allowed_roots):
         raise ValueError(
             f"Path '{path_str}' is outside the allowed directory. "
             f"Paths must be within the working directory or system temp directory."
@@ -133,7 +134,7 @@ def process_csv(inp, out):
     out_path = _safe_resolve_path(out)
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(fn) + ["top_hit", "lookup_score"])
+        w = csv.DictWriter(f, fieldnames=list(dict.fromkeys(list(fn) + ["top_hit", "lookup_score"])))
         w.writeheader()
         w.writerows(results)
 
@@ -144,6 +145,11 @@ def build_parser():
     sub=p.add_subparsers(dest="cmd", required=True)
     s=sub.add_parser("single"); s.add_argument("query", nargs="?", default="creatinine"); s.add_argument("--query", dest="q2")
     b=sub.add_parser("batch"); b.add_argument("--input", required=True); b.add_argument("--output", required=True)
+    m=sub.add_parser("matrix", help="Calculate p-distance, JC69, or K2P from aligned FASTA")
+    m.add_argument("--input", required=True, help="Aligned nucleotide FASTA")
+    m.add_argument("--output", required=True, help="Matrix output path")
+    m.add_argument("--model", choices=["p", "jc69", "k2p"], default="p")
+    m.add_argument("--format", choices=["csv", "tsv", "phylip"], default="csv")
     return p
 
 def main(argv=None):
@@ -153,6 +159,18 @@ def main(argv=None):
         print(lookup(q)); return 0
     if a.cmd=="batch":
         res=process_csv(a.input, a.output); print(f"Processed {len(res)} -> {a.output}"); return 0
+    if a.cmd == "matrix":
+        source = _safe_resolve_path(a.input)
+        target = _safe_resolve_path(a.output)
+        if source == target:
+            raise ValueError("Input and output paths must be different")
+        if source.stat().st_size > MAX_CSV_FILE_SIZE:
+            raise ValueError("FASTA file exceeds 10 MB limit")
+        records = parse_fasta(source.read_text(encoding="utf-8-sig"))
+        matrix = calculate_matrix(records, a.model)
+        target.write_text(render_matrix(records, matrix, a.format), encoding="utf-8")
+        print(f"Computed {a.model} matrix for {len(records)} sequences -> {target}")
+        return 0
     p.print_help(); return 1
 
 if __name__=="__main__":
