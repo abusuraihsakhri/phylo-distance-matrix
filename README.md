@@ -1,159 +1,88 @@
-# Phylo Distance Matrix
+# Phylogenetic Distance Matrix
 
-> **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Reference Guidelines & Standards:** `CAP / CLSI / ISO Standards`
+A browser and Python utility for calculating pairwise nucleotide distances from **already aligned FASTA** sequences. Implements uncorrected p-distance, Jukes–Cantor (JC69), and Kimura 2-parameter (K2P) distances.
 
-<div align="center">
+## Browser application
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+Open the static application in `web/` through a local web server or GitHub Pages (deployment configured in `.github/workflows/pages.yml`).
 
-</div>
+Paste an aligned DNA FASTA file or upload a `.fa` or `.fasta` file, select a model, and choose **Calculate matrix**. Inspect the symmetric matrix and download **CSV** or **PHYLIP**. **Load example** provides a small demonstration.
 
----
+All browser calculations occur locally using JavaScript; the static app does **not** transmit sequences to an API. No Pyodide or backend is needed. Browser limits: 2 MB per input file, 100 taxa, 100,000 alignment columns and 10 million pairwise site comparisons. Modern browsers supporting ES modules, the File API and Blob downloads are required.
 
-## 📖 What It Does
+## Distance models
 
-Phylogenetic Distance Matrix Builder with enterprise security features:
+For a pair of sequences, let \(L\) be the number of columns where both contain unambiguous A, C, G, or T. Ambiguous IUPAC bases, gaps and missing positions are **pairwise deleted**.
 
-- **Domain Lookup Engine**: Token overlap + substring scoring for biomedical term matching (p-distance, JC69, K2P, Neighbor-Joining, FASTA, Newick)
-- **Batch CSV Processing**: Process CSV files with automatic query column detection
-- **Multi-Agent Supervisor**: Orchestrates specialized workers (QC, Safety, Protocol Conformance) for task evaluation
-- **Zero-PHI Outbound Guard**: Regex-based detection and redaction of protected health information (SSN, MRN, phone, email, DOB)
-- **HMAC-SHA256 Audit Trail**: Cryptographically chained, tamper-evident logging
-- **FastAPI REST API**: OpenAPI 3.1 endpoints with Prometheus metrics
+- **p-distance:** \(p = (\mathrm{transitions}+\mathrm{transversions})/L\).
+- **JC69:** \(d=-3/4\ln(1-4p/3)\).
+- **K2P:** \(d=-1/2\ln(1-2P-Q)-1/4\ln(1-2Q)\), with \(P\) and \(Q\) the transition and transversion proportions.
 
----
+Corrected distances estimate substitutions per comparable site under the model assumptions. Calculations report an error for no comparable sites or undefined logarithms (saturation); they never silently substitute a finite result. Sequences must have equal aligned length and unique identifiers. The application does **not** perform alignment, phylogenetic tree inference, bootstrap, model selection, or recombination detection.
 
-## ⚙️ Key Modules
+## Python command-line interface
 
-### Core Module (`phylo_dist.py`)
-- **`lookup(query)`** — Domain-specific term matching with scoring. Returns top hits.
-- **`process_csv(input, output)`** — Batch CSV processing with validation and path traversal protection.
-- **`build_parser()`** — CLI argument parser construction.
-- **`main(argv)`** — CLI entry point.
+The scientific calculation itself uses only the Python standard library (Python 3.10 or later).
 
-### Enterprise Agents (`agents/`)
-- **`base.py`** — PHI guard, HMAC-SHA256 audit trail, security exceptions
-- **`supervisor.py`** — Multi-agent orchestration and consensus building
-- **`workers.py`** — Specialized evaluation workers (QC, Safety, Protocol)
-- **`api.py`** — FastAPI REST endpoints
-- **`metrics.py`** — Prometheus metrics collector
-- **`models.py`** — Pydantic data models
+~~~bash
+python phylo_dist.py matrix --input aligned.fasta --output distances.csv --model jc69
+python phylo_dist.py matrix --input aligned.fasta --output distances.phy --model k2p --format phylip
+~~~
 
----
+Available models: `p`, `jc69`, `k2p`. Formats: `csv`, `tsv`, `phylip`. Strict PHYLIP output requires identifiers of ten or fewer characters without spaces; CSV accommodates longer names.
 
-## 💻 CLI Quickstart & Usage
+The pre-existing term-lookup functionality is retained:
 
-### Installation
-```bash
-pip install fastapi uvicorn pydantic pytest
-```
-
-### Run the CLI
-```bash
-# Single lookup
+~~~bash
 python phylo_dist.py single jc69
-
-# Batch CSV processing
 python phylo_dist.py batch --input sample.csv --output results.csv
+~~~
 
-# Enterprise supervisor audit
-python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
+These legacy commands perform terminology matching, **not** sequence-distance calculation.
 
-# Batch processing via supervisor
-python cli.py batch -i sample.csv -o results.csv
+## Optional server and API
 
-# Verify audit trail integrity
-python cli.py verify-audit
-
-# Launch REST API server
+~~~bash
+python -m pip install -r requirements.txt
 python cli.py serve --host 127.0.0.1 --port 8000
-```
+~~~
 
-### API Endpoints
-| Endpoint | Method | Description |
-|:---------|:-------|:------------|
-| `/health` | GET | Health check |
-| `/metrics` | GET | Prometheus metrics |
-| `/api/audit` | POST | Submit task for evaluation |
-| `/api/chat` | POST | Supervisory chat query |
-| `/api/audit/logs` | GET | Retrieve audit trail |
+The standalone browser interface is served at <http://127.0.0.1:8000/> and OpenAPI documentation at <http://127.0.0.1:8000/docs>.
 
----
+~~~bash
+curl -X POST http://127.0.0.1:8000/api/matrix \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"p","fasta":">Taxon_A\nACGT\n>Taxon_B\nATGT\n"}'
+~~~
 
-## 🛡️ Security Features
+The `POST /api/matrix` response includes `taxa`, `model` and a square `distances` matrix. The backend retains legacy `/api/audit`, `/api/chat`, `/api/audit/logs`, `/health` and `/metrics` endpoints and the `cli.py audit/chat/batch` commands. These supervisor routines implement **generic threshold simulations**, not phylogenetic inference, clinical decision support, or validated scientific interpretations. The chat provider is an offline mock.
 
-* **Zero-PHI Outbound Guard:** Regex-based detection of SSNs, MRNs, phone numbers, emails, DOBs, and patient names. Raises `SecurityException` on detection.
-* **PHI Redaction:** `PHIGuard.redact_phi()` replaces sensitive patterns with `[REDACTED_IDENTIFIER]`.
-* **HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs. Set `AUDIT_SECRET_KEY` environment variable in production.
-* **Path Traversal Protection:** File operations restricted to working directory and system temp directory.
-* **Input Validation:** CSV file size limits, empty file detection, header validation.
+## Tests
 
----
+~~~bash
+python -m pip install -r requirements.txt pytest httpx
+python -m pytest -q
+node --test web/app.test.mjs
+node --check web/app.mjs
+~~~
 
-## 🧪 Testing & Verification
+CI runs the Python tests on versions 3.10–3.12, exercises the browser calculations using Node, and builds the container.
 
-Run the automated test suite:
+## Local container
 
-```bash
-pytest -v
-```
+~~~bash
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+docker compose up --build
+~~~
 
-Run with coverage:
+Compose binds only `127.0.0.1:8000`. Do not expose the generic audit endpoints on public networks without access controls.
 
-```bash
-pytest -v --tb=short
-```
+## Privacy, security and limitations
 
-Execute high-throughput batch simulation benchmarks:
+Browser FASTA analysis and exports stay on the user's device. The optional REST API **does** receive requests at the configured server; it does not store submitted FASTA sequences on disk. Server infrastructure and network logging are outside the application's control.
 
-```bash
-python simulator.py 100
-```
+The legacy supervisor uses limited regex-based identifier checks and an in-memory HMAC-SHA256 chain. Regexes cannot guarantee PHI detection or de-identification. Set a strong private `AUDIT_SECRET_KEY` on the backend. The audit chain is not persistent or a substitute for a regulated audit system. No HIPAA compliance is claimed.
 
----
+## Technologies and license
 
-## 🐳 Container Deployment
-
-```bash
-docker build -t phylo-distance-matrix .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key phylo-distance-matrix
-```
-
-Or using Docker Compose:
-
-```bash
-AUDIT_SECRET_KEY=your-secret-key docker-compose up
-```
-
----
-
-## 📁 Project Structure
-
-```
-phylo-distance-matrix/
-├── phylo_dist.py          # Core lookup and CSV processing
-├── cli.py                 # CLI interface
-├── simulator.py           # Stress testing simulator
-├── enrichment.py          # Feature engines
-├── agents/                # Enterprise agent framework
-│   ├── base.py           # Security, PHI guard, audit trail
-│   ├── supervisor.py     # Multi-agent orchestrator
-│   ├── workers.py        # Specialized evaluation workers
-│   ├── api.py            # FastAPI endpoints
-│   ├── models.py         # Pydantic models
-│   ├── metrics.py        # Prometheus metrics
-│   ├── llm_factory.py    # LLM provider factory
-│   ├── learning.py       # Bayesian calibration
-│   └── streamer.py       # WebSocket telemetry
-├── tests/                 # Test suite
-├── web/                   # Operations console (HTML)
-├── Dockerfile             # Container definition
-├── docker-compose.yml     # Compose configuration
-└── .github/workflows/     # CI/CD pipeline
-```
+Python 3.10+ with a standard-library calculation core; optional FastAPI, Pydantic and Uvicorn server; HTML, CSS and dependency-free ES-module JavaScript in the browser. MIT license; see [LICENSE](LICENSE).
