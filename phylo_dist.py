@@ -89,8 +89,11 @@ def process_csv(inp, out):
         ValueError: If file is empty or has no valid rows
         PermissionError: If unable to write output file
     """
-    # Validate and resolve input path (prevents path traversal)
+    # Validate paths before opening either file to avoid accidental data loss.
     inp_path = _safe_resolve_path(inp)
+    out_path = _safe_resolve_path(out)
+    if inp_path == out_path:
+        raise ValueError("Input and output paths must be different")
 
     if not inp_path.exists():
         raise FileNotFoundError(f"Input file not found: '{inp}'")
@@ -129,9 +132,6 @@ def process_csv(inp, out):
             res = lookup(row.get(qcol, ""), row)
             merged = {**row, "top_hit": res["top_hit"], "lookup_score": res["score"]}
             results.append(merged)
-
-    # Validate and resolve output path (prevents path traversal)
-    out_path = _safe_resolve_path(out)
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(dict.fromkeys(list(fn) + ["top_hit", "lookup_score"])))
