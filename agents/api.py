@@ -33,6 +33,8 @@ def api_matrix(request: MatrixRequest):
         records = parse_fasta(request.fasta)
         if len(records) > 100 or len(records[0][1]) > 100000:
             raise ValueError("API limit: at most 100 taxa and 100,000 aligned columns")
+        if len(records) * (len(records) - 1) // 2 * len(records[0][1]) > 10000000:
+            raise ValueError("API limit: 10 million pairwise site comparisons")
         return {"taxa": [name for name, _ in records],
                 "model": request.model,
                 "distances": calculate_matrix(records, request.model)}
