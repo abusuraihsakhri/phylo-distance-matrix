@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Phylo Distance Matrix API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
+    "description": "Nucleotide distance-matrix API with optional legacy generic supervisor endpoints.",
     "version": "3.0.0-ENTERPRISE",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
@@ -107,6 +107,67 @@
         "responses": {
           "200": {
             "description": "Cryptographic audit trail"
+          }
+        }
+      }
+    },
+    "/api/matrix": {
+      "post": {
+        "summary": "Calculate p-distance, JC69 or K2P from aligned DNA FASTA",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fasta"
+                ],
+                "properties": {
+                  "fasta": {
+                    "type": "string",
+                    "description": "Aligned nucleotide FASTA, 2 MiB max"
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "p",
+                      "jc69",
+                      "k2p"
+                    ],
+                    "default": "p"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ordered taxa, model, symmetric distance matrix"
+          },
+          "422": {
+            "description": "Unaligned or invalid FASTA, zero comparable sites, saturation, or input too large"
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Serve local static matrix calculator",
+        "responses": {
+          "200": {
+            "description": "HTML page"
+          }
+        }
+      }
+    },
+    "/app.mjs": {
+      "get": {
+        "summary": "Serve standalone browser module",
+        "responses": {
+          "200": {
+            "description": "JavaScript module"
           }
         }
       }
