@@ -89,3 +89,12 @@ def test_cli_computes_real_matrix(tmp_path):
     assert rows[2][1] == "0.2500000000"
     with pytest.raises(ValueError, match="different"):
         main(["matrix", "--input", str(source), "--output", str(source)])
+
+def test_legacy_batch_refuses_to_overwrite_source(tmp_path):
+    from phylo_dist import process_csv
+    src = tmp_path / "lookup.csv"
+    original = "query\njc69\n"
+    src.write_text(original, encoding="utf-8")
+    with pytest.raises(ValueError, match="different"):
+        process_csv(str(src), str(src))
+    assert src.read_text(encoding="utf-8") == original
