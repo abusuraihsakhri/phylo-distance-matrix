@@ -61,7 +61,7 @@ The `POST /api/matrix` response includes `taxa`, `model` and a square `distances
 
 ~~~bash
 python -m pip install -r requirements.txt pytest httpx
-pytest -q
+python -m pytest -q
 node --test web/app.test.mjs
 node --check web/app.mjs
 ~~~
