@@ -6,6 +6,7 @@ const TRANSITIONS = new Set(["AG", "GA", "CT", "TC"]);
 
 export function parseFasta(text) {
   if (typeof text !== "string") throw new Error("FASTA input must be text.");
+  if (text.length > 2 * 1024 * 1024) throw new Error("FASTA input exceeds the 2 MB browser limit.");
   const records = [];
   let name = null;
   let chunks = [];
@@ -146,6 +147,9 @@ if (typeof document !== "undefined") {
       const records = parseFasta(input.value);
       if (records.length > 100) throw new Error("Browser limit: 100 taxa.");
       if (records[0].sequence.length > 100000) throw new Error("Browser limit: 100,000 aligned columns.");
+      if (records.length * (records.length - 1) / 2 * records[0].sequence.length > 10000000) {
+        throw new Error("Alignment exceeds the 10-million-site-pair browser computation limit.");
+      }
       const matrix = calculateMatrix(records, model.value);
       const table = document.createElement("table");
       const caption = document.createElement("caption");
