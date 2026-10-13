@@ -8,7 +8,7 @@ Open the static application in `web/` through a local web server or GitHub Pages
 
 Paste an aligned DNA FASTA file or upload a `.fa` or `.fasta` file, select a model, and choose **Calculate matrix**. Inspect the symmetric matrix and download **CSV** or **PHYLIP**. **Load example** provides a small demonstration.
 
-All browser calculations occur locally using JavaScript; the static app does **not** transmit sequences to an API. No Pyodide or backend is needed. Browser limits: 2 MB per input file, 100 taxa and 100,000 alignment columns. Modern browsers supporting ES modules, the File API and Blob downloads are required.
+All browser calculations occur locally using JavaScript; the static app does **not** transmit sequences to an API. No Pyodide or backend is needed. Browser limits: 2 MB per input file, 100 taxa, 100,000 alignment columns and 10 million pairwise site comparisons. Modern browsers supporting ES modules, the File API and Blob downloads are required.
 
 ## Distance models
 
