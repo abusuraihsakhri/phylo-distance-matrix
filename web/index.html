@@ -1,236 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phylo Distance Matrix — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Calculate p-distance, JC69 and K2P pairwise nucleotide matrices from aligned FASTA in your browser.">
+  <title>Phylogenetic Distance Matrix</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --bg:#0c1220; --surface:#151f30; --border:#354357; --text:#edf3ff; --muted:#bac8da; --accent:#84b9ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); line-height:1.5; }
+    main { max-width:1170px; margin:0 auto; padding:32px 24px 64px; } header { border-bottom:1px solid var(--border); margin-bottom:24px; padding-bottom:24px; }
+    h1 { font-size:clamp(1.7rem,4vw,2.45rem); line-height:1.2; letter-spacing:-.04em; margin:0 0 10px; }
+    h2 { font-size:1.1rem; margin:0 0 14px; } p { margin:0 0 12px; color:var(--muted); }
+    .eyebrow { color:var(--accent); text-transform:uppercase; font-size:.8rem; font-weight:700; letter-spacing:.12em; margin-bottom:10px; }
+    .layout { display:grid; grid-template-columns:minmax(280px,420px) minmax(0,1fr); gap:20px; align-items:start; }
+    .panel { padding:24px; border:1px solid var(--border); border-radius:16px; background:var(--surface); min-width:0; }
+    label { display:block; font-weight:600; font-size:.9rem; margin-bottom:7px; }
+    textarea, select, input[type=file] { width:100%; font:inherit; background:#0b1525; color:var(--text); border:1px solid #506078; border-radius:8px; padding:10px; }
+    textarea { min-height:275px; resize:vertical; font: .85rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    input[type=file] { padding:8px; } .field { margin-bottom:16px; } .hint { font-size:.81rem; margin-top:6px; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; } button { font:inherit; font-weight:650; cursor:pointer; padding:10px 15px; border-radius:8px; border:1px solid var(--border); color:var(--text); background:#25354b; }
+    button.primary { color:#081321; background:var(--accent); border-color:var(--accent); } button:disabled { opacity:.45; cursor:not-allowed; }
+    button:not(:disabled):hover { filter:brightness(1.12); } :is(button,textarea,select,input):focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    .summary { background:#10192a; border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:16px 0; font-size:.9rem; color:var(--muted); }
+    .message { min-height:3rem; padding:10px 0; color:#b8e6cb; font-size:.9rem; } .message.error { color:#ffb1b1; font-weight:650; }
+    .table-wrap { max-width:100%; overflow:auto; border:1px solid var(--border); border-radius:10px; }
+    table { border-collapse:collapse; width:100%; font: .83rem/1.5 ui-monospace,SFMono-Regular,monospace; white-space:nowrap; }
+    caption { text-align:left; padding:10px 14px; color:var(--muted); font: .85rem/1.4 system-ui,sans-serif; }
+    th, td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:right; }
+    th:first-child { text-align:left; position:sticky; left:0; background:#1b293e; z-index:1; } thead th { background:#1b293e; color:var(--accent); }
+    tr:last-child th, tr:last-child td { border-bottom:0; } td { font-variant-numeric:tabular-nums; }
+    .note { font-size:.85rem; margin-top:18px; } .note strong { color:var(--text); }
+    a { color:var(--accent); } @media(max-width:800px){ main{padding:24px 14px 48px;} .layout{grid-template-columns:1fr;} .panel{padding:18px;} textarea{min-height:220px;} }
+  </style>
+  <script type="module" src="./app.mjs"></script>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Phylo Distance Matrix</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
-    </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Phylo Distance Matrix Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "phylo-distance-matrix",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+<main>
+  <header>
+    <div class="eyebrow">Sequence analysis · runs entirely in your browser</div>
+    <h1>Phylogenetic Distance Matrix</h1>
+    <p>Generate symmetric p-distance, Jukes–Cantor (JC69), or Kimura 2-parameter (K2P) distance matrices from <strong>aligned nucleotide FASTA</strong>.</p>
+  </header>
+  <div class="layout">
+    <section class="panel" aria-labelledby="input-heading">
+      <h2 id="input-heading">1 · Alignment input</h2>
+      <div class="field"><label for="file">Load FASTA file</label><input id="file" type="file" accept=".fasta,.fa,.fas,.txt,text/plain"><p class="hint">Up to 2 MB; input remains on this device.</p></div>
+      <div class="field"><label for="alignment">Or paste aligned sequences</label><textarea id="alignment" spellcheck="false" placeholder=">Taxon_A&#10;ACGTACGT&#10;>Taxon_B&#10;ACGTTCGT"></textarea></div>
+      <div class="field"><label for="model">Distance model</label><select id="model"><option value="p">p-distance · raw proportion</option><option value="jc69">JC69 · equal rates and frequencies</option><option value="k2p">K2P · separate transition/transversion rates</option></select></div>
+      <div class="actions"><button type="button" id="calculate" class="primary">Calculate matrix</button><button type="button" id="sample">Load example</button></div>
+      <p class="note"><strong>Input rules:</strong> At least two unique taxa, all sequences equal length, DNA alphabet (IUPAC ambiguity and gaps accepted). Ambiguous sites and gaps are omitted per pair. Pre-align sequences before importing.</p>
+    </section>
+    <section class="panel" aria-labelledby="output-heading">
+      <h2 id="output-heading">2 · Pairwise distances</h2>
+      <div id="stats" class="summary" aria-live="polite">No matrix computed</div>
+      <div id="result" class="table-wrap" aria-label="Distance matrix results"></div>
+      <div class="actions" style="margin-top:18px"><button type="button" id="csv" disabled>Download CSV</button><button type="button" id="phylip" disabled>Download PHYLIP</button></div>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+      <p class="note"><strong>Model limitations:</strong> JC69 and K2P distances may be undefined for highly divergent pairs; the tool reports saturation rather than fabricating values. Outputs are evolutionary substitutions per aligned comparable site (p-distance is a proportion). No tree inference or bootstrap analysis is performed.</p>
+      <p class="note">PHYLIP export requires taxa names of ≤10 characters without spaces. CSV supports longer names. This is a client-side scientific utility; it does not transmit sequences to a server.</p>
+    </section>
+  </div>
+</main>
 </body>
 </html>
